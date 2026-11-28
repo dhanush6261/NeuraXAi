@@ -3,6 +3,7 @@ from flask import Flask, jsonify, render_template, request, Response
 
 
 from core.language import detect_language
+from core.intent import extract_name
 from core.llm import ask_llm_stream
 from core.memory import (
     save_message,
@@ -57,14 +58,13 @@ def chat():
         return Response(stream(), mimetype="text/plain")
 
     # Capture user name (FACT ONLY)
-    if user_lower.startswith("my name is") or user_lower.startswith("i am"):
-        parts = user_msg.split()
-        name = parts[-1].strip()
-
-        if memory_on and name:
+    name = extract_name(user_msg)
+    if name:
+        if memory_on:
             save_user_name(name)
-
-        reply = f"Got it. Your name is {name}."
+            reply = f"Got it. Your name is {name}."
+        else:
+            reply = f"Nice to meet you, {name}. Memory is off, so I won't remember your name."
 
         return Response(reply, mimetype="text/plain")
 
