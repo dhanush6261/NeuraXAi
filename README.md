@@ -283,6 +283,7 @@ Open <http://127.0.0.1:5000> in a browser. Keep the Flask terminal and Ollama se
 ### 5. Optional model and runtime configuration
 
 Set environment variables before starting Flask. NeuraXAi reads them at startup and logs a warning when an invalid value falls back to its default.
+NeuraXAi asks Ollama to skip the thinking step so thinking models such as qwen3.5 answer directly.
 
 | Variable | Default | Meaning |
 |---|---|---|

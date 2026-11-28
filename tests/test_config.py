@@ -120,6 +120,7 @@ class TestConfigConsumers(unittest.TestCase):
                 "model": "test-model",
                 "prompt": "test prompt",
                 "stream": True,
+                "think": False,
                 "options": {"temperature": 1.25},
             },
             stream=True,

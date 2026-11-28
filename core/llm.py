@@ -18,6 +18,8 @@ def ask_llm_stream(prompt):
         "model": model,
         "prompt": prompt,
         "stream": True,
+        # Thinking models stream empty responses, hiding client disconnects and preventing Stop.
+        "think": False,
         "options": {
             "temperature": config.TEMPERATURE
         }
