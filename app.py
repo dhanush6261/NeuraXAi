@@ -1,19 +1,18 @@
-from core.prompt import SYSTEM_PROMPT
-from flask import Flask, jsonify, render_template, request, Response
 
+from flask import Flask, Response, jsonify, render_template, request
 
+from core.chat import stream_reply
+from core.intent import classify, extract_name, shortcut_reply
 from core.language import detect_language
-from core.intent import extract_name
-from core.intent import classify, shortcut_reply
-from core.llm import ask_llm_stream
+from core.llm import OllamaError, ask_llm_stream
 from core.memory import (
-    save_message,
     get_history,
+    get_user_name,
+    save_message,
     save_user_name,
-    get_user_name
 )
-from flask import jsonify
-from core.llm import OllamaError
+from core.prompt import build_prompt
+
 
 app = Flask(
     __name__,
@@ -36,110 +35,57 @@ def chat():
         return jsonify(error="memory must be true or false"), 400
 
     user_msg = data.get("message", "").strip()
-    user_lower = user_msg.lower()
 
     if not user_msg:
         return Response("", mimetype="text/plain")
 
-    # Language detect
     language = detect_language(user_msg)
 
-    # Deterministic shortcuts (NO LLM)
+    # Deterministic shortcuts
     intent = classify(user_msg)
     if intent:
-        user_name = get_user_name() if memory_on and intent == "ask_name" else None
+        user_name = (
+            get_user_name()
+            if memory_on and intent == "ask_name"
+            else None
+        )
         reply = shortcut_reply(intent, language, user_name)
+
         if memory_on:
             save_message("user", user_msg)
             save_message("assistant", reply)
+
         return Response(reply, mimetype="text/plain")
 
-    # Capture user name (FACT ONLY)
+    # Explicit name capture
     name = extract_name(user_msg)
     if name:
         if memory_on:
             save_user_name(name)
             reply = f"Got it. Your name is {name}."
         else:
-            reply = f"Nice to meet you, {name}. Memory is off, so I won't remember your name."
+            reply = (
+                f"Nice to meet you, {name}. "
+                "Memory is off, so I won't remember your name."
+            )
 
         return Response(reply, mimetype="text/plain")
 
-    # Format rules
-    if "bullet" in user_lower or "points" in user_lower:
-        format_rule = (
-            "- Answer ONLY in bullet points\n"
-            "- Maximum 5 points\n"
-            "- No paragraphs\n"
-        )
-    elif "paragraph" in user_lower:
-        format_rule = (
-            "- Answer in ONE short paragraph\n"
-            "- Maximum 5 lines\n"
-            "- No bullet points\n"
-        )
-    else:
-        format_rule = (
-            "- Answer briefly\n"
-            "- Maximum 3 lines\n"
-        )
-
-    # Language rule
-    language_rule = (
-        "Answer ONLY in Telugu."
-        if language == "telugu"
-        else "Answer ONLY in English."
-    )
-
-    # Memory context
+    # Build the LLM prompt
     history_block = get_history().strip() if memory_on else ""
+    prompt = build_prompt(user_msg, language, history_block)
 
-    # Updated Prompt (using SYSTEM_PROMPT)
-    prompt = f"""
-{SYSTEM_PROMPT}
-
-FORMAT RULES:
-{format_rule}
-
-LANGUAGE RULE:
-{language_rule}
-
-FACTUAL MEMORY:
-{history_block}
-
-User:
-{user_msg}
-
-Assistant:
-""".strip()
-
+    # Handle initial Ollama failures
     chunks = iter(ask_llm_stream(prompt))
     try:
         first = next(chunks, "")
     except OllamaError as err:
         return jsonify(error=str(err)), 503
 
-    def stream():
-        full_reply = first
-        try:
-            if first:
-                yield first
-            for chunk in chunks:
-                full_reply += chunk
-                yield chunk
-        except OllamaError as err:
-            yield f"\n\n[Error: {err}]"
-            return
-        finally:
-            close = getattr(chunks, "close", None)
-            if close is not None:
-                close()
-
-        if memory_on:
-            save_message("user", user_msg)
-            save_message("assistant", full_reply)
-
-    return Response(stream(), mimetype="text/plain")
+    return Response(
+        stream_reply(chunks, first, user_msg, memory_on, save_message),
+        mimetype="text/plain",
+    )
 
 
 if __name__ == "__main__":
