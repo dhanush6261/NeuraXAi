@@ -17,3 +17,52 @@ STRICT RULES (MANDATORY):
 - Do NOT add extra explanations
 - Do NOT repeat user input
 """
+def get_format_rule(user_msg):
+    user_lower = user_msg.lower()
+
+    if "bullet" in user_lower or "points" in user_lower:
+        return (
+            "- Answer ONLY in bullet points\n"
+            "- Maximum 5 points\n"
+            "- No paragraphs\n"
+        )
+
+    if "paragraph" in user_lower:
+        return (
+            "- Answer in ONE short paragraph\n"
+            "- Maximum 5 lines\n"
+            "- No bullet points\n"
+        )
+
+    return (
+        "- Answer briefly\n"
+        "- Maximum 3 lines\n"
+    )
+
+
+def build_prompt(user_msg, language, history_block=""):
+    format_rule = get_format_rule(user_msg)
+
+    language_rule = (
+        "Answer ONLY in Telugu."
+        if language == "telugu"
+        else "Answer ONLY in English."
+    )
+
+    return f"""
+{SYSTEM_PROMPT}
+
+FORMAT RULES:
+{format_rule}
+
+LANGUAGE RULE:
+{language_rule}
+
+FACTUAL MEMORY:
+{history_block}
+
+User:
+{user_msg}
+
+Assistant:
+""".strip()
