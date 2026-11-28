@@ -283,6 +283,7 @@ Open <http://127.0.0.1:5000> in a browser. Keep the Flask terminal and Ollama se
 ### 5. Optional model and runtime configuration
 
 Set environment variables before starting Flask. NeuraXAi reads them at startup and logs a warning when an invalid value falls back to its default.
+NeuraXAi asks Ollama to skip the thinking step so thinking models such as qwen3.5 answer directly.
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -466,7 +467,7 @@ The immediate priority is to validate v0.4.0. Then develop advanced memory befor
 | Problem | Action |
 |---|---|
 | `ModuleNotFoundError: flask` | Activate the correct virtual environment and run `python -m pip install -r requirements.txt` |
-| Ollama connection refused | Check the Ollama application or start `ollama serve` if not running |
+| Ollama connection refused | Chat displays `Ollama is not reachable at <configured URL>. Start Ollama and try again.` Start the Ollama application or run `ollama serve`, then resend the message. |
 | Model not found | Run `ollama list` and `ollama pull phi3:mini` |
 | Port 5000 already in use | Stop the previous Flask process before starting the new one |
 | Invalid memory file | Back up the file and restore valid JSON; do not silently erase history |

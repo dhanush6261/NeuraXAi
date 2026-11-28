@@ -98,14 +98,15 @@ Completion condition (team roadmap): existing features work, memory-OFF tests pa
 
 ### [ ] Task 6: Ollama client hardening with visible errors (D4, D5, D12)
 **Description:** Rewrite `core/llm.py` so failures are explicit and Stop actually stops generation: timeouts from config, status check, handling of `{"error": ...}` lines, and closing the upstream response when the consumer disconnects. The route pulls the first chunk before replying, so "Ollama offline" and "model not found" become a 503 JSON body that the UI shows.
+**Status:** reviewed. Manual checks ran on the merged code with qwen3.5:4b. Ollama unreachable (closed port) → 503, and the UI showed the message. A normal turn worked. An uninstalled model gave the `ollama pull` hint. Aborting mid-answer closed the Ollama connection within 1s (checked with `netstat`; `ollama ps` lists loaded models, not active generations). Requests send `think: false`; without it, Stop during a thinking model's reasoning didn't stop Ollama. Open: confirm a non-thinking model (e.g. `phi3:mini`) still answers with `think: false`.
 **Acceptance criteria:**
-- [ ] Ollama not running → `/chat` returns 503 `{"error": "Ollama is not reachable at …"}`; the app keeps running and the UI shows the message.
-- [ ] Unknown model → error naming the model, with the hint `ollama pull <model>`.
-- [ ] Closing the generator (client abort) closes the `requests` response (test with a fake response recording `.close()`).
-- [ ] `app.js` checks `response.ok`, reads the JSON error and renders it.
+- [x] Ollama not running → `/chat` returns 503 `{"error": "Ollama is not reachable at …"}`; the app keeps running and the UI shows the message.
+- [x] Unknown model → error naming the model, with the hint `ollama pull <model>`.
+- [x] Closing the generator (client abort) closes the `requests` response (test with a fake response recording `.close()`).
+- [x] `app.js` checks `response.ok`, reads the JSON error and renders it.
 **Verification:**
-- [ ] Tests pass: `python -m unittest tests.test_llm -v` (mock `requests.post`: connection error, HTTP 404, error line mid-stream, normal stream, close-on-abort).
-- [ ] Manual: stop Ollama → message → readable error; start Ollama → works; Stop mid-answer → `ollama ps` shows generation ended.
+- [x] Tests pass: `python -m unittest tests.test_llm -v` (mock `requests.post`: connection error, HTTP 404, error line mid-stream, normal stream, close-on-abort).
+- [x] Manual: stop Ollama → message → readable error; start Ollama → works; Stop mid-answer → `ollama ps` shows generation ended.
 **Dependencies:** Task 5
 **Files likely touched:** `core/llm.py`, `app.py`, `web/static/app.js`, `tests/test_llm.py`
 **Estimated scope:** Medium (4 files)

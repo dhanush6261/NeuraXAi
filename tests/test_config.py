@@ -110,6 +110,7 @@ class TestConfigConsumers(unittest.TestCase):
             mock.patch.object(config, "TEMPERATURE", 1.25),
             mock.patch.object(llm.requests, "post") as post,
         ):
+            post.return_value.status_code = 200
             post.return_value.iter_lines.return_value = [b'{"response":"hello"}']
             self.assertEqual(list(llm.ask_llm_stream("test prompt")), ["hello"])
 
@@ -119,9 +120,11 @@ class TestConfigConsumers(unittest.TestCase):
                 "model": "test-model",
                 "prompt": "test prompt",
                 "stream": True,
+                "think": False,
                 "options": {"temperature": 1.25},
             },
             stream=True,
+            timeout=(config.CONNECT_TIMEOUT, config.READ_TIMEOUT),
         )
 
     def test_no_model_or_port_literals_outside_config(self):
