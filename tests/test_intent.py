@@ -6,6 +6,7 @@ from unittest import mock
 import app as app_module
 from core import memory
 from core.intent import extract_name
+from core.intent import Intent, classify, shortcut_reply
 
 
 class TestExtractName(unittest.TestCase):
@@ -85,3 +86,54 @@ class TestNameCapture(unittest.TestCase):
         self.assertEqual(self.chat("I am a student"), "Good luck with your studies.")
         self.assertEqual(memory.get_user_name(), "Alex Kumar")
         self.llm.assert_called_once()
+
+
+class TestClassify(unittest.TestCase):
+    def test_exact_phrase_matching(self):
+        cases = [
+            ("Hi!", Intent.GREETING),
+            ("HELLO", Intent.GREETING),
+            ("  hey  ", Intent.GREETING),
+            ("good morning", Intent.GREETING),
+            ("... good   afternoon ?!", Intent.GREETING),
+            ("నమస్కారం", Intent.GREETING),
+            ("Thanks!", Intent.THANKS),
+            ("thank you", Intent.THANKS),
+            ("ధన్యవాదాలు", Intent.THANKS),
+            ("bye", Intent.FAREWELL),
+            ("good night", Intent.FAREWELL),
+            ("శుభ రాత్రి", Intent.FAREWELL),
+            ("Who are you?", Intent.IDENTITY),
+            ("What’s your name?", Intent.IDENTITY),
+            ("నువ్వు ఎవరు?", Intent.IDENTITY),
+            ("what is my name", Intent.ASK_NAME),
+            ("what's my name", Intent.ASK_NAME),
+            ("naa peru enti", Intent.ASK_NAME),
+            ("నా పేరు ఏమిటి", Intent.ASK_NAME),
+            ("high school", None),
+            ("hello world program in python", None),
+            ("hi, can you explain recursion", None),
+            ("thanks for nothing, explain python", None),
+            ("what is your name based on", None),
+            ("my name is Alex", None),
+            ("hi neuraxai", None),
+            ("thanks, that helped", None),
+            ("", None),
+        ]
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertIs(classify(text), expected)
+
+    def test_shortcut_replies(self):
+        cases = [
+            (Intent.GREETING, "telugu", None, "హలో! నేను మీకు ఎలా సహాయం చేయగలను?"),
+            (Intent.IDENTITY, "english", "Alex", "I'm NeuraXAi, a local AI assistant running on your computer."),
+            (Intent.ASK_NAME, "english", "Alex", "Alex"),
+            (Intent.ASK_NAME, "english", None, "I don't know."),
+            (Intent.ASK_NAME, "telugu", "Alex", "Alex"),
+            (Intent.ASK_NAME, "telugu", None, "నాకు తెలియదు."),
+            (Intent.THANKS, "other", None, "You're welcome!"),
+        ]
+        for intent, language, name, expected in cases:
+            with self.subTest(intent=intent, language=language, name=name):
+                self.assertEqual(shortcut_reply(intent, language, name), expected)
