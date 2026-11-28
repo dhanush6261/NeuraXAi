@@ -140,14 +140,15 @@ Completion condition (team roadmap): existing features work, memory-OFF tests pa
 
 ### [ ] Task 9: Deterministic intents: greetings, thanks, bye, identity (D9)
 **Description:** Extend `core/intent.py` with `classify(text, language) -> Intent` for no-LLM replies: greetings (case/punctuation tolerant, good morning/night), thanks, farewell, identity ("who are you", "what is your name" → always NeuraXAi), "what is my name". Replies in English and Telugu. `chat()` dispatches on the result.
+**Status:** reviewed. Implemented as `classify(text)` plus `shortcut_reply(intent, language, user_name)`, because language only affects the reply. "good night" is a farewell. The new route tests fail on `main` (12 of 13 checks) and pass with the change. Shortcuts run before `extract_name`, so "naa peru enti" no longer saves "enti" as the name. `chat()` is 112 lines; getting it under ~60 needs the prompt builder, so that box carries to Task 10.
 **Acceptance criteria:**
-- [ ] "Hi!", "HELLO", "good morning", "thanks", "bye", "good night", "who are you" resolve without calling the LLM (mock asserts `ask_llm_stream` not called).
-- [ ] "high school" and "hello world program in python" do **not** match the greeting shortcut.
-- [ ] Shortcut replies are saved to history when memory is ON, and not when OFF.
+- [x] "Hi!", "HELLO", "good morning", "thanks", "bye", "good night", "who are you" resolve without calling the LLM (mock asserts `ask_llm_stream` not called).
+- [x] "high school" and "hello world program in python" do **not** match the greeting shortcut.
+- [x] Shortcut replies are saved to history when memory is ON, and not when OFF.
 - [ ] `chat()` in `app.py` is under ~60 lines afterwards.
 **Verification:**
-- [ ] Tests pass: `python -m unittest tests.test_intent tests.test_chat_routes -v`
-- [ ] Manual: greeting/thanks/bye/identity prompts reply instantly in both languages.
+- [x] Tests pass: `python -m unittest tests.test_intent tests.test_chat_routes -v`
+- [x] Manual: greeting/thanks/bye/identity prompts reply instantly in both languages.
 **Dependencies:** Task 4, Task 8
 **Files likely touched:** `core/intent.py`, `app.py`, `tests/test_intent.py`, `tests/test_chat_routes.py`
 **Estimated scope:** Medium (4 files)
