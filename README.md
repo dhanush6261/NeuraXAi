@@ -466,7 +466,7 @@ The immediate priority is to validate v0.4.0. Then develop advanced memory befor
 | Problem | Action |
 |---|---|
 | `ModuleNotFoundError: flask` | Activate the correct virtual environment and run `python -m pip install -r requirements.txt` |
-| Ollama connection refused | Check the Ollama application or start `ollama serve` if not running |
+| Ollama connection refused | Chat displays `Ollama is not reachable at <configured URL>. Start Ollama and try again.` Start the Ollama application or run `ollama serve`, then resend the message. |
 | Model not found | Run `ollama list` and `ollama pull phi3:mini` |
 | Port 5000 already in use | Stop the previous Flask process before starting the new one |
 | Invalid memory file | Back up the file and restore valid JSON; do not silently erase history |

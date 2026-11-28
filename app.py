@@ -9,6 +9,8 @@ from core.memory import (
     save_user_name,
     get_user_name
 )
+from flask import jsonify
+from core.llm import OllamaError
 
 app = Flask(
     __name__,
@@ -124,11 +126,27 @@ User:
 Assistant:
 """.strip()
 
+    chunks = iter(ask_llm_stream(prompt))
+    try:
+        first = next(chunks, "")
+    except OllamaError as err:
+        return jsonify(error=str(err)), 503
+
     def stream():
-        full_reply = ""
-        for chunk in ask_llm_stream(prompt):
-            full_reply += chunk
-            yield chunk
+        full_reply = first
+        try:
+            if first:
+                yield first
+            for chunk in chunks:
+                full_reply += chunk
+                yield chunk
+        except OllamaError as err:
+            yield f"\n\n[Error: {err}]"
+            return
+        finally:
+            close = getattr(chunks, "close", None)
+            if close is not None:
+                close()
 
         if memory_on:
             save_message("user", user_msg)

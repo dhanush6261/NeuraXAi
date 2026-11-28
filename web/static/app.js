@@ -146,22 +146,37 @@ async function sendMessage() {
       signal: controller.signal
     });
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = "";
+    if (!response.ok) {
+      let message = response.statusText || "The chat request failed.";
+      try {
+        const error = await response.json();
+        if (typeof error?.error === "string") {
+          message = error.error;
+        }
+      } catch (err) {
+        if (err.name === "AbortError") throw err;
+      }
+      aiDiv.textContent = message;
+    } else {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      fullText += decoder.decode(value, { stream: true });
-      aiDiv.innerHTML = formatAIResponse(fullText);
-      scrollBottom();
+        fullText += decoder.decode(value, { stream: true });
+        aiDiv.innerHTML = formatAIResponse(fullText);
+        scrollBottom();
+      }
     }
 
   } catch (err) {
     if (err.name === "AbortError") {
       aiDiv.innerHTML += "<br><em>Generation stopped</em>";
+    } else {
+      aiDiv.textContent = "Could not complete the chat request. Try again.";
     }
   }
 
