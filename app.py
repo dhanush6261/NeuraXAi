@@ -4,6 +4,7 @@ from flask import Flask, jsonify, render_template, request, Response
 
 from core.language import detect_language
 from core.intent import extract_name
+from core.intent import classify, shortcut_reply
 from core.llm import ask_llm_stream
 from core.memory import (
     save_message,
@@ -43,21 +44,15 @@ def chat():
     # Language detect
     language = detect_language(user_msg)
 
-    # Greeting shortcut (NO LLM)
-    if user_lower in ["hi", "hello", "hey"]:
-        reply = (
-            "Hello! How can I help you?"
-            if language == "english"
-            else "హలో! నేను మీకు ఎలా సహాయం చేయగలను?"
-        )
-
-        def stream():
-            yield reply
-            if memory_on:
-                save_message("user", user_msg)
-                save_message("assistant", reply)
-
-        return Response(stream(), mimetype="text/plain")
+    # Deterministic shortcuts (NO LLM)
+    intent = classify(user_msg)
+    if intent:
+        user_name = get_user_name() if memory_on and intent == "ask_name" else None
+        reply = shortcut_reply(intent, language, user_name)
+        if memory_on:
+            save_message("user", user_msg)
+            save_message("assistant", reply)
+        return Response(reply, mimetype="text/plain")
 
     # Capture user name (FACT ONLY)
     name = extract_name(user_msg)
@@ -68,15 +63,6 @@ def chat():
         else:
             reply = f"Nice to meet you, {name}. Memory is off, so I won't remember your name."
 
-        return Response(reply, mimetype="text/plain")
-
-    # Answer name from memory (NO LLM)
-    if "what is my name" in user_lower:
-        name = get_user_name() if memory_on else None
-        reply = name if name else "I don't know."
-        if memory_on:
-            save_message("user", user_msg)
-            save_message("assistant", reply)
         return Response(reply, mimetype="text/plain")
 
     # Format rules
