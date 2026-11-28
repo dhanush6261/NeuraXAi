@@ -1,7 +1,8 @@
 from core.prompt import SYSTEM_PROMPT
 from flask import Flask, jsonify, render_template, request, Response
-import re
 
+
+from core.language import detect_language
 from core.llm import ask_llm_stream
 from core.memory import (
     save_message,
@@ -15,12 +16,6 @@ app = Flask(
     template_folder="web/templates",
     static_folder="web/static"
 )
-
-# Telugu Unicode range
-TELUGU_REGEX = re.compile(r"[\u0C00-\u0C7F]")
-
-def detect_language(text: str) -> str:
-    return "telugu" if TELUGU_REGEX.search(text) else "english"
 
 
 @app.route("/")
