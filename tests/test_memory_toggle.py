@@ -29,7 +29,7 @@ class TestMemoryToggle(unittest.TestCase):
         for message, expected in [
             ("what is my name", "I don't know."),
             ("hello", "Hello! How can I help you?"),
-            ("my name is Sam", "Got it. Your name is Sam."),
+            ("my name is Sam", "Nice to meet you, Sam. Memory is off, so I won't remember your name."),
             ("Explain Python", "A reply."),
         ]:
             with self.subTest(message=message):

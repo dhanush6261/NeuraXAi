@@ -68,15 +68,16 @@ Completion condition (team roadmap): existing features work, memory-OFF tests pa
 
 ### [ ] Task 4: Name capture that doesn't corrupt facts (D2)
 **Description:** Create `core/intent.py` with `extract_name(text) -> str | None`. Only explicit phrases count ("my name is …", "call me …", Roman Telugu "naa peru …"); capture multi-word names; "I am a student" must never touch the saved name. When memory is OFF, say the name wasn't saved.
+**Status:** reviewed. D2 test fails on `main` without the fix (`'student' != 'Alex Kumar'`) and passes with it. Live check with qwen3.5:4b: set "Alex Kumar", then "I am a student" went to the model, and "what is my name" still answered "Alex Kumar". Names with combining marks (Telugu vowel signs, Devanagari, decomposed accents) are accepted. Telugu-script "నా పేరు …" is not a name phrase yet; only Roman "naa peru" is.
 **Acceptance criteria:**
-- [ ] `extract_name("My name is Alex Kumar")` → `"Alex Kumar"`; `"call me Sam"` → `"Sam"`.
-- [ ] `"I am a student"`, `"I am tired"`, `"My name is"` (empty) → `None`.
-- [ ] Trailing punctuation is trimmed; over-long input (>60 chars or >4 words) is rejected.
-- [ ] `/chat` saves the name only when memory is ON; the reply differs when OFF.
-- [ ] D2 expected-failure test passes and is un-marked.
+- [x] `extract_name("My name is Alex Kumar")` → `"Alex Kumar"`; `"call me Sam"` → `"Sam"`.
+- [x] `"I am a student"`, `"I am tired"`, `"My name is"` (empty) → `None`.
+- [x] Trailing punctuation is trimmed; over-long input (>60 chars or >4 words) is rejected.
+- [x] `/chat` saves the name only when memory is ON; the reply differs when OFF.
+- [x] D2 expected-failure test passes and is un-marked.
 **Verification:**
-- [ ] Tests pass: `python -m unittest tests.test_intent -v` (table-driven, at least 12 cases).
-- [ ] Manual: "I am a student" after setting a name → name unchanged.
+- [x] Tests pass: `python -m unittest tests.test_intent -v` (table-driven, at least 12 cases).
+- [x] Manual: "I am a student" after setting a name → name unchanged.
 **Dependencies:** Task 2, Task 3
 **Files likely touched:** `core/intent.py`, `app.py`, `tests/test_intent.py`
 **Estimated scope:** Small (3 files)

@@ -73,7 +73,6 @@ class TestKnownBugs(BaselineTestCase):
             memory.save_message("user", "hello")
             self.assertTrue(os.path.exists(nested))
 
-    @unittest.expectedFailure  # D2 — fixed by Task 4
     def test_i_am_a_student_does_not_overwrite_name(self):
         memory.save_user_name("Alex Kumar")
         self.chat("I am a student")
